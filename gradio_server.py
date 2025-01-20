@@ -30,11 +30,11 @@ text_encoder_choices = ["ckpts/text_encoder/llava-llama-3-8b-v1_1_fp16.safetenso
 server_config_filename = "gradio_config.json"
 
 if not Path(server_config_filename).is_file():
-    server_config = {"attention_mode" : "sdpa",  
+    server_config = {"attention_mode" : "sage",  
                      "transformer_filename": transformer_choices[1], 
                      "text_encoder_filename" : text_encoder_choices[1],
                      "compile" : "",
-                     "profile" : profile_type.LowRAM_LowVRAM }
+                     "profile" : profile_type.HighRAM_LowVRAM }
 
     with open(server_config_filename, "w", encoding="utf-8") as writer:
         writer.write(json.dumps(server_config))
@@ -107,7 +107,7 @@ else:
     physical_memory= psutil.virtual_memory().total    
     partialPinning = physical_memory <= 2**30 * 32 
 
-
+print(f'args: {args}')
 hunyuan_video_sampler = HunyuanVideoSampler.from_pretrained(transformer_filename, text_encoder_filename, attention_mode = attention_mode, pinToMemory = pinToMemory, partialPinning = partialPinning, args=args,  device="cpu") 
 pipe = hunyuan_video_sampler.pipeline
 
@@ -137,14 +137,14 @@ def apply_changes(
     return "<h1>New Config file created. Please restart the Gradio Server</h1>"
 
 
-from moviepy.editor import ImageSequenceClip
+from moviepy import ImageSequenceClip
 import numpy as np
 
 def save_video(final_frames, output_path, fps=24):
     assert final_frames.ndim == 4 and final_frames.shape[3] == 3, f"invalid shape: {final_frames} (need t h w c)"
     if final_frames.dtype != np.uint8:
         final_frames = (final_frames * 255).astype(np.uint8)
-    ImageSequenceClip(list(final_frames), fps=fps).write_videofile(output_path, verbose= False, logger = None)
+    ImageSequenceClip(list(final_frames), fps=fps).write_videofile(output_path, logger = None)
 
 def build_callback(state, pipe, progress, status, num_inference_steps):
     def callback(step_idx, t, latents):

@@ -34,6 +34,7 @@ def main():
         writer.write(json.dumps(vae_config))
 
     # Load models
+    print(f'args: {args}')
     hunyuan_video_sampler = HunyuanVideoSampler.from_pretrained(models_root_path,text_encoder_filename, args=args)
 
     from mmgp import offload, profile_type 
